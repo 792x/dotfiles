@@ -1,0 +1,2 @@
+#!/bin/sh
+feh --bg-scale '/home/falker/Misson_Hero_VP6.jpg' 
