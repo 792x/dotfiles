@@ -87,9 +87,12 @@ urxvt*.colorUL:    #ffffff
 !
 ! grassland by bohoomil
 
-URxvt*background:  #0d1926
+URxvt*background:  #00070D
 URxvt*foreground:  #d9e6f2
 *cursorColor: #238c0e
+
+!old pajlada
+!URxvt*background: #0d1926
 
 ! black
 *color0:  #00070d

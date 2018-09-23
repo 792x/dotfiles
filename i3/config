@@ -42,6 +42,10 @@ bindsym $mod+d exec dmenu_run
 # installed.
 # bindsym $mod+d exec --no-startup-id i3-dmenu-desktop
 
+# start chromium keybind
+bindsym $mod+c exec chromium
+
+
 # change focus
 bindsym $mod+j focus left
 bindsym $mod+k focus down
@@ -66,8 +70,23 @@ bindsym $mod+Shift+Down move down
 bindsym $mod+Shift+Up move up
 bindsym $mod+Shift+Right move right
 
+
+
+
+        # Pressing left will shrink the window’s width.
+        # Pressing right will grow the window’s width.
+        # Pressing up will shrink the window’s height.
+        # Pressing down will grow the window’s height.
+        bindsym $mod+Ctrl+j resize shrink width 10px or 10 ppt
+        bindsym $mod+Ctrl+k resize grow height 10 px or 10 ppt
+        bindsym $mod+Ctrl+i resize shrink height 10 px or 10 ppt
+        bindsym $mod+Ctrl+l resize grow width 10 px or 10 ppt
+
+
+
+
 # split in horizontal orientation
-#bindsym $mod+h split h
+bindsym $mod+h split h
 
 # split in vertical orientation
 bindsym $mod+v split v
@@ -144,9 +163,9 @@ mode "resize" {
         # Pressing right will grow the window’s width.
         # Pressing up will shrink the window’s height.
         # Pressing down will grow the window’s height.
-        bindsym h resize shrink width 10 px or 10 ppt
-        bindsym j resize grow height 10 px or 10 ppt
-        bindsym k resize shrink height 10 px or 10 ppt
+        bindsym j resize shrink width 10px or 10 ppt
+        bindsym k resize grow height 10 px or 10 ppt
+        bindsym i resize shrink height 10 px or 10 ppt
         bindsym l resize grow width 10 px or 10 ppt
 
         # same bindings, but for the arrow keys
@@ -176,5 +195,13 @@ new_window 1pixel
 
 focus_wrapping off
 
+
+# class                 border  backgr. text    indicator child_border
+client.focused          #4E4E4E #285577 #ffffff #4E4E4E  #4E4E4E
+client.unfocused        #00070D #222222 #888888 #4E4E4E  #00070D
+client.placeholder      #00070D #222222 #888888 #4E4E4E  #00070D
+client.focused_inactive #00070D #222222 #888888 #4E4E4E  #00070D
+
+
 gaps inner 15
-gaps outer 15
+gaps outer 10
