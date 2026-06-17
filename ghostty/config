@@ -1,0 +1,68 @@
+# Ghostty — JetBrains Fleet (Dark) theme, glassy/translucent
+# Matches VSCode "Jetbrains Fleet" theme + JetBrains Mono @ 13pt
+
+font-family = JetBrains Mono
+font-size = 15
+
+# Match VSCode: ligatures off
+font-feature = -calt
+
+# Glassy / translucent look (macOS blur behind window)
+background-opacity = 0.92
+background-blur-radius = 20
+
+# Base colors (Fleet Dark)
+background = 181818
+foreground = d6d6dd
+cursor-color = d6d6dd
+cursor-text = 181818
+selection-background = 194176
+selection-foreground = d6d6dd
+
+# ANSI palette (Fleet terminal colors)
+palette = 0=#676767
+palette = 1=#f14c4c
+palette = 2=#15ac91
+palette = 3=#e5b95c
+palette = 4=#4c9df3
+palette = 5=#e567dc
+palette = 6=#75d3ba
+palette = 7=#d6d6dd
+palette = 8=#676767
+palette = 9=#f14c4c
+palette = 10=#15ac91
+palette = 11=#e5b95c
+palette = 12=#4c9df3
+palette = 13=#e567dc
+palette = 14=#75d3ba
+palette = 15=#d6d6dd
+
+# Window chrome to match the glassy feel
+macos-titlebar-style = transparent
+window-padding-x = 10
+window-padding-y = 8
+
+# Default window size (columns x rows)
+window-width = 120
+window-height = 32
+
+# Thicken font rendering on macOS (counteracts thin antialiasing)
+font-thicken = true
+
+# Shell integration (zsh / oh-my-zsh): prompt tracking, cwd inheritance
+shell-integration = zsh
+shell-integration-features = cursor,sudo,title
+
+# Alt+arrow word-jump and readline editing
+macos-option-as-alt = true
+
+# Big scrollback for long build / Claude Code output
+scrollback-limit = 100000
+
+# Quality of life
+copy-on-select = clipboard
+mouse-hide-while-typing = true
+window-inherit-working-directory = true
+
+# Global dropdown terminal (summon over anything)
+keybind = global:cmd+grave_accent=toggle_quick_terminal

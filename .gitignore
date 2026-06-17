@@ -1,0 +1,4 @@
+# Never commit secrets
+.zsh_secrets
+*.bak
+*.bak.*
