@@ -34,9 +34,46 @@ compinit
 source <(fzf --zsh)            # fzf keybindings + history search (Ctrl-R)
 eval "$(direnv hook zsh)"      # per-repo .envrc (sets AWS_PROFILE, etc.)
 
-# ─── Aliases ──────────────────────────────────────────────────────────────
-# AWS session switching via Granted: `assume` (fzf picker) / `assume <profile>`
-alias assume="source assume"
+# ─── AWS ────────────────────────────────────────────────────────────────────
+# `assume`            — context-aware picker with risk tags (🟢 dev/test, 🟡 beta/stg, 🔴 prod):
+#                         · inside a repo → only that repo's SSO-session accounts
+#                         · outside a repo → all accounts
+# `assume <profile>`  — jump straight to one (any org)
+# `assume -a`         — force the full all-accounts picker, even inside a repo
+_aws_risk() {   # risk tag per profile name
+  case "$1" in
+    *prod*)              echo "🔴" ;;
+    *beta*|*stg*|*stag*) echo "🟡" ;;
+    *dev*|*test*|*tst*)  echo "🟢" ;;
+    *)                   echo "⚪️" ;;
+  esac
+}
+assume() {
+  local scope
+  case "$1" in
+    -a|--all) scope=all ;;
+    "")       scope=auto ;;
+    *)        source assume "$@"; return ;;   # explicit profile or Granted flag (-c …)
+  esac
+
+  local sess profiles
+  [[ "$scope" == auto && -n "$AWS_PROFILE" ]] && \
+    sess=$(aws configure get sso_session --profile "$AWS_PROFILE" 2>/dev/null)
+  if [[ -n "$sess" ]]; then
+    profiles=$(for p in $(aws configure list-profiles); do
+      [[ "$(aws configure get sso_session --profile "$p" 2>/dev/null)" == "$sess" ]] && echo "$p"
+    done)
+  else
+    profiles=$(aws configure list-profiles)
+  fi
+
+  local pick
+  pick=$(for p in ${(f)profiles}; do printf '%s  %s\n' "$(_aws_risk "$p")" "$p"; done \
+    | fzf --prompt "${sess:-all} ▸ " --height 40% --reverse \
+          --header '🟢 low risk   🟡 medium   🔴 high (prod)' \
+    | awk '{print $NF}')
+  [[ -n "$pick" ]] && source assume "$pick"
+}
 
 # ─── Secrets ──────────────────────────────────────────────────────────────
 [ -f "$HOME/.zsh_secrets" ] && source "$HOME/.zsh_secrets"
