@@ -35,12 +35,13 @@ source <(fzf --zsh)            # fzf keybindings + history search (Ctrl-R)
 eval "$(direnv hook zsh)"      # per-repo .envrc (sets AWS_PROFILE, etc.)
 
 # ─── AWS ────────────────────────────────────────────────────────────────────
-# `assume`            — context-aware picker with risk badge ([dev]/[test] green, [beta]/[stg] amber, [prod] red):
-#                         · inside a repo → only that repo's SSO-session accounts
-#                         · outside a repo → all accounts
-# `assume <profile>`  — jump straight to one (any org)
-# `assume -a`         — force the full all-accounts picker, even inside a repo
-export GRANTED_ALIAS_CONFIGURED=true   # our `assume` function is the alias; stop Granted prompting to install one
+# `assume`            — pick an AWS profile (fzf, risk-badged), log in via SSO if
+#                       needed, and set AWS_PROFILE for the shell. One token store
+#                       (~/.aws/sso/cache) used by CLI + terraform + SDK + repo scripts.
+#                         · inside a repo → picker scoped to that repo's SSO session
+#                         · outside a repo → all profiles
+# `assume <profile>`  — jump straight to one
+# `assume -a`         — force the full all-profiles picker, even inside a repo
 _aws_badge() {   # colored [env] badge per profile risk
   case "$1" in
     *prod*)       printf '\033[31m[prod]\033[0m' ;;  # red
@@ -51,31 +52,41 @@ _aws_badge() {   # colored [env] badge per profile risk
     *)            printf '\033[2m[?]\033[0m'     ;;  # dim
   esac
 }
-unalias assume 2>/dev/null   # drop the old alias so re-sourcing this file is safe
+_aws_session_of() {   # echo the sso_session of a profile (empty if none)
+  awk -v p="$1" '
+    /^\[profile /{c=$2; sub(/\]$/,"",c)}
+    /^[[:space:]]*sso_session[[:space:]]*=/{if(c==p){print $NF; exit}}' "${AWS_CONFIG_FILE:-$HOME/.aws/config}"
+}
 assume() {
-  local scope
+  local cfg="${AWS_CONFIG_FILE:-$HOME/.aws/config}" pick scope sess
   case "$1" in
     -a|--all) scope=all ;;
     "")       scope=auto ;;
-    *)        source assume "$@"; return ;;   # explicit profile or Granted flag (-c …)
+    *)        pick="$1" ;;   # explicit profile name
   esac
 
-  # parse ~/.aws/config once with awk (no per-profile `aws` subprocess = instant)
-  local cfg="${AWS_CONFIG_FILE:-$HOME/.aws/config}" sess="" profiles
-  [[ "$scope" == auto && -n "$AWS_PROFILE" ]] && \
-    sess=$(awk -v p="$AWS_PROFILE" '
-      /^\[profile /{c=$2; sub(/\]$/,"",c)}
-      /^[[:space:]]*sso_session[[:space:]]*=/{v=$NF; if(c==p){print v; exit}}' "$cfg")
-  profiles=$(awk -v want="$sess" '
-    /^\[profile /{c=$2; sub(/\]$/,"",c); o[++n]=c}
-    /^[[:space:]]*sso_session[[:space:]]*=/{s[c]=$NF}
-    END{for(i=1;i<=n;i++) if(want==""||s[o[i]]==want) print o[i]}' "$cfg")
+  if [[ -z "$pick" ]]; then
+    local cursess="" profiles
+    [[ "$scope" == auto && -n "$AWS_PROFILE" ]] && cursess=$(_aws_session_of "$AWS_PROFILE")
+    profiles=$(awk -v want="$cursess" '
+      /^\[profile /{c=$2; sub(/\]$/,"",c); o[++n]=c}
+      /^[[:space:]]*sso_session[[:space:]]*=/{s[c]=$NF}
+      END{for(i=1;i<=n;i++) if(want==""||s[o[i]]==want) print o[i]}' "$cfg")
+    pick=$(for p in ${(f)profiles}; do printf '%-12s %s\n' "$p" "$(_aws_badge "$p")"; done \
+      | fzf --ansi --prompt "${cursess:-all} ▸ " --height 40% --reverse) || return   # Esc/Ctrl-C → bail
+    pick=${pick%% *}   # strip the badge, keep the profile name
+  fi
+  [[ -z "$pick" ]] && return
 
-  local pick
-  pick=$(for p in ${(f)profiles}; do printf '%-12s %s\n' "$p" "$(_aws_badge "$p")"; done \
-    | fzf --ansi --prompt "${sess:-all} ▸ " --height 40% --reverse) || return   # Esc/Ctrl-C → bail cleanly
-  pick=${pick%% *}   # keep only the profile name (strip the badge)
-  [[ -n "$pick" ]] && source assume "$pick"
+  unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN   # let AWS_PROFILE win
+  export AWS_PROFILE="$pick"
+
+  if ! aws sts get-caller-identity >/dev/null 2>&1; then            # only log in if token missing/expired
+    sess=$(_aws_session_of "$pick")
+    if [[ -n "$sess" ]]; then aws sso login --sso-session "$sess"; else aws sso login --profile "$pick"; fi
+  fi
+  aws sts get-caller-identity --query Account --output text 2>/dev/null \
+    | sed "s/.*/✔ AWS_PROFILE=$pick (account &)/"
 }
 
 # ─── Secrets ──────────────────────────────────────────────────────────────

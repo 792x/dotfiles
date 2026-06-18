@@ -18,11 +18,11 @@ git clone <repo-url> ~/.dotfiles
 ~/.dotfiles/install.sh
 ```
 
-Prereqs: Homebrew, Oh My Zsh, `fzf`, `direnv`, `nvm`, `pnpm`, `awscli`, `granted` (`common-fate/granted/granted`), Ghostty, VSCode (`code` CLI).
+Prereqs: Homebrew, Oh My Zsh, `fzf`, `direnv`, `nvm`, `pnpm`, `awscli`, Ghostty, VSCode (`code` CLI).
 
 ## AWS account switching
 
-`assume` — context-aware SSO account picker (Granted + direnv + fzf). See
+`assume` — AWS-native SSO account picker (awscli + direnv + fzf). See
 [docs/aws-assume.md](docs/aws-assume.md) for how it works, required tools, and per-machine
 `~/.aws/config` / `.envrc` setup.
 
