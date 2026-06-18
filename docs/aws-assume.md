@@ -23,6 +23,12 @@ same `sso_session`.
 | `assume` outside a repo | picker over **all** profiles |
 | `assume <profile>` | switch straight to one |
 | `assume -a` | force the full all-profiles picker, even inside a repo |
+| `assume -c [profile]` | open the AWS **web console** for the picked/given profile (browser) |
+
+`assume -c` is the native replacement for Granted's console-open: it pulls the profile's SSO
+role credentials (`aws configure export-credentials`), exchanges them for a console sign-in
+token at AWS's federation endpoint, and opens the console in your browser at the profile's
+region. Needs `python3` (stdlib only) + `open`.
 
 The picker shows a risk badge after each name — `[dev]`/`[test]` green, `[beta]`/`[stg]`
 amber, `[prod]` red (derived from the profile name, so new accounts classify automatically).

@@ -42,6 +42,7 @@ eval "$(direnv hook zsh)"      # per-repo .envrc (sets AWS_PROFILE, etc.)
 #                         · outside a repo → all profiles
 # `assume <profile>`  — jump straight to one
 # `assume -a`         — force the full all-profiles picker, even inside a repo
+# `assume -c [prof]`  — open the AWS web console for the (picked) profile
 _aws_badge() {   # colored [env] badge per profile risk
   case "$1" in
     *prod*)       printf '\033[31m[prod]\033[0m' ;;  # red
@@ -58,7 +59,8 @@ _aws_session_of() {   # echo the sso_session of a profile (empty if none)
     /^[[:space:]]*sso_session[[:space:]]*=/{if(c==p){print $NF; exit}}' "${AWS_CONFIG_FILE:-$HOME/.aws/config}"
 }
 assume() {
-  local cfg="${AWS_CONFIG_FILE:-$HOME/.aws/config}" pick scope sess
+  local cfg="${AWS_CONFIG_FILE:-$HOME/.aws/config}" pick scope sess console=0
+  [[ "$1" == -c || "$1" == --console ]] && { console=1; shift; }
   case "$1" in
     -a|--all) scope=all ;;
     "")       scope=auto ;;
@@ -77,6 +79,7 @@ assume() {
     pick=${pick%% *}   # strip the badge, keep the profile name
   fi
   [[ -z "$pick" ]] && return
+  if (( console )); then _aws_console "$pick"; return; fi   # -c: open web console instead
 
   unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN   # let AWS_PROFILE win
   export AWS_PROFILE="$pick"
@@ -87,6 +90,36 @@ assume() {
   fi
   aws sts get-caller-identity --query Account --output text 2>/dev/null \
     | sed "s/.*/✔ AWS_PROFILE=$pick (account &)/"
+}
+
+# Open the AWS web console for a profile: SSO creds → federation sign-in token → browser.
+_aws_console() {
+  local prof="${1:-$AWS_PROFILE}" sess region creds url
+  [[ -z "$prof" ]] && { print -u2 "console: no profile (pass one or set AWS_PROFILE)"; return 1; }
+  sess=$(_aws_session_of "$prof")
+  if ! aws sts get-caller-identity --profile "$prof" >/dev/null 2>&1; then
+    if [[ -n "$sess" ]]; then aws sso login --sso-session "$sess"; else aws sso login --profile "$prof"; fi
+  fi
+  region=$(aws configure get region --profile "$prof"); : "${region:=us-east-1}"
+  creds=$(aws configure export-credentials --profile "$prof" --format process 2>/dev/null) \
+    || { print -u2 "console: could not get credentials for $prof"; return 1; }
+  url=$(python3 - "$region" "$creds" <<'PY'
+import json, sys, urllib.parse, urllib.request
+region, creds = sys.argv[1], json.loads(sys.argv[2])
+session = json.dumps({"sessionId": creds["AccessKeyId"],
+                      "sessionKey": creds["SecretAccessKey"],
+                      "sessionToken": creds["SessionToken"]})
+q = urllib.parse.urlencode({"Action": "getSigninToken", "Session": session})
+with urllib.request.urlopen("https://signin.aws.amazon.com/federation?" + q) as r:
+    token = json.load(r)["SigninToken"]
+dest = f"https://{region}.console.aws.amazon.com/console/home?region={region}"
+login = urllib.parse.urlencode({"Action": "login", "Issuer": "assume",
+                                "Destination": dest, "SigninToken": token})
+print("https://signin.aws.amazon.com/federation?" + login)
+PY
+) || { print -u2 "console: federation sign-in failed"; return 1; }
+  print "opening console for $prof ($region)…"
+  open "$url"
 }
 
 # Right-prompt segment: active AWS profile + SSO token state.
