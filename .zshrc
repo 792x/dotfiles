@@ -89,5 +89,28 @@ assume() {
     | sed "s/.*/✔ AWS_PROFILE=$pick (account &)/"
 }
 
+# Right-prompt segment: active AWS profile + SSO token state.
+# Reads expiresAt from the session's cache file (sha1(session).json) — no network.
+# green `aws:<profile>` = valid token; red `aws:<profile> ✗` = expired / not logged in.
+_aws_prompt() {
+  [[ -n "$AWS_PROFILE" ]] || return
+  local sess hash f body exp now
+  sess=$(_aws_session_of "$AWS_PROFILE")
+  if [[ -n "$sess" ]]; then
+    hash=$(printf '%s' "$sess" | shasum | cut -c1-40)
+    f="$HOME/.aws/sso/cache/$hash.json"
+    [[ -r "$f" ]] && body=$(<"$f") && \
+      [[ "$body" =~ '"expiresAt":[[:space:]]*"([0-9T:Z-]+)"' ]] && exp=$match[1]
+  fi
+  now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  if [[ -n "$exp" && "$exp" > "$now" ]]; then
+    print -n "%F{green}aws:${AWS_PROFILE}%f"
+  else
+    print -n "%F{red}aws:${AWS_PROFILE} ✗%f"
+  fi
+}
+setopt prompt_subst
+RPROMPT='$(_aws_prompt)'
+
 # ─── Secrets ──────────────────────────────────────────────────────────────
 [ -f "$HOME/.zsh_secrets" ] && source "$HOME/.zsh_secrets"
