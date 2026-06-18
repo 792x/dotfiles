@@ -122,9 +122,12 @@ PY
   open "$url"
 }
 
-# Right-prompt segment: active AWS profile + SSO token state.
-# Reads expiresAt from the session's cache file (sha1(session).json) — no network.
-# green `aws:<profile>` = valid token; red `aws:<profile> ✗` = expired / not logged in.
+# Right-prompt segment: active AWS profile + SSO token state (reads the session's
+# cache file sha1(session).json — no network). SSO access tokens are short (~1h) but
+# auto-refresh for the ~8h session, so:
+#   green  aws:<profile>    access token fresh
+#   amber  aws:<profile> ⟳  lapsed but a refreshToken is present (CLI refreshes on next use)
+#   red    aws:<profile> ✗  no session / no refresh token → run `assume`
 _aws_prompt() {
   [[ -n "$AWS_PROFILE" ]] || return
   local sess hash f body exp now
@@ -132,12 +135,14 @@ _aws_prompt() {
   if [[ -n "$sess" ]]; then
     hash=$(printf '%s' "$sess" | shasum | cut -c1-40)
     f="$HOME/.aws/sso/cache/$hash.json"
-    [[ -r "$f" ]] && body=$(<"$f") && \
-      [[ "$body" =~ '"expiresAt":[[:space:]]*"([0-9T:Z-]+)"' ]] && exp=$match[1]
+    [[ -r "$f" ]] && body=$(<"$f")
   fi
+  [[ "$body" =~ '"expiresAt":[[:space:]]*"([0-9T:Z-]+)"' ]] && exp=$match[1]
   now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
   if [[ -n "$exp" && "$exp" > "$now" ]]; then
     print -n "%F{green}aws:${AWS_PROFILE}%f"
+  elif [[ "$body" == *'"refreshToken"'* ]]; then
+    print -n "%F{yellow}aws:${AWS_PROFILE} ⟳%f"
   else
     print -n "%F{red}aws:${AWS_PROFILE} ✗%f"
   fi
