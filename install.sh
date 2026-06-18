@@ -15,6 +15,7 @@ link .zshrc        .zshrc
 link .zshenv       .zshenv
 link .zprofile     .zprofile
 link ghostty/config .config/ghostty/config
+link config/direnv/direnv.toml .config/direnv/direnv.toml
 
 echo
 echo "Done. Create ~/.zsh_secrets for tokens (see README)."

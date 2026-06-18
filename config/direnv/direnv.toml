@@ -1,0 +1,7 @@
+# Trust .envrc files under these prefixes without `direnv allow`.
+# Our repo .envrc files only `export AWS_PROFILE=…`; whitelisting ~/Code stops
+# direnv re-prompting every time one's content changes.
+# Trade-off: any .envrc placed under a whitelisted dir runs automatically — keep
+# this scoped to dirs that only hold your own repos.
+[whitelist]
+prefix = ["/Users/casper/Code"]

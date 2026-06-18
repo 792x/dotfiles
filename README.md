@@ -10,6 +10,7 @@ macOS shell + terminal setup: zsh (Oh My Zsh) + Ghostty + VSCode/Claude Code.
 | `.zshenv` | `~/.zshenv` | Minimal (runs for all shells) |
 | `.zprofile` | `~/.zprofile` | Login-shell PATH: Homebrew, JetBrains Toolbox |
 | `ghostty/config` | `~/.config/ghostty/config` | Ghostty: JetBrains Fleet theme, JetBrains Mono, translucent |
+| `config/direnv/direnv.toml` | `~/.config/direnv/direnv.toml` | direnv: trust `.envrc` under `~/Code` (no per-change `allow`) |
 
 ## Install (new machine)
 
