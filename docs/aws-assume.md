@@ -93,6 +93,45 @@ direnv allow /path/to/repo
 
 `.envrc` files live in each project repo, not here.
 
+## One credential source (Granted `credential_process`)
+
+By default Granted caches SSO tokens in the **macOS Keychain**, while the AWS CLI / SDK /
+terraform read `~/.aws/sso/cache/` when resolving an `AWS_PROFILE`. That split means
+`assume` can report "logged in" while `AWS_PROFILE=...; terraform/aws/SDK` still sees an
+expired token (it's reading a different store).
+
+To unify on Granted as the single source, add a `credential_process` line to **every**
+profile so all `AWS_PROFILE`-based tooling pulls creds from Granted (refreshing/logging in
+as needed):
+
+```ini
+[profile myorg-dev]
+credential_process = granted credential-process --profile myorg-dev --auto-login
+sso_session = myorg
+sso_account_id = 111111111111
+sso_role_name = AdministratorAccess
+region = eu-west-1
+```
+
+`--auto-login` opens the browser to complete SSO when the token is expired, so
+`terraform apply` / `pnpm iac:*` self-heal auth instead of failing. Requires `granted` on
+`PATH` for whatever launches the tool (fine from a terminal; GUI-launched apps may not have
+it). Keep the `sso_session` lines — Granted reads them to know how to fetch creds.
+
+Validate after editing config:
+
+```sh
+aws sts get-caller-identity --profile myorg-dev   # 1st run may open the browser, then prints identity
+```
+
+Caveats / gotchas:
+- A stale `assume` in the same shell exports `AWS_ACCESS_KEY_ID` etc., which **override**
+  `credential_process`. If a tool uses old creds, `unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN`
+  or open a fresh shell.
+- `--auto-login` would hang a non-interactive/CI run waiting for a browser — this setup is for
+  local dev only.
+- Rollback: every edit keeps a backup at `~/.aws/config.bak-*`.
+
 ## How repo-scoping works
 
 `assume` (no args) reads the current `AWS_PROFILE` (set by direnv), looks up its
