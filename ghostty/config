@@ -16,6 +16,7 @@ background = 181818
 foreground = d6d6dd
 cursor-color = d6d6dd
 cursor-text = 181818
+cursor-style = bar
 selection-background = 194176
 selection-foreground = d6d6dd
 
