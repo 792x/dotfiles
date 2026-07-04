@@ -17,6 +17,10 @@ source "$ZSH/oh-my-zsh.sh"
 # ─── Environment ──────────────────────────────────────────────────────────
 export EDITOR="code --wait"   # git commits, `kubectl edit`, etc. open in VSCode
 
+# UTF-8 locale (some CLIs warn / mangle output without it)
+export LC_ALL=en_US.UTF-8
+export LC_CTYPE=en_US.UTF-8
+
 # pnpm
 export PNPM_HOME="$HOME/Library/pnpm"
 case ":$PATH:" in
@@ -152,3 +156,13 @@ RPROMPT='$(_aws_prompt)'
 
 # ─── Secrets ──────────────────────────────────────────────────────────────
 [ -f "$HOME/.zsh_secrets" ] && source "$HOME/.zsh_secrets"
+
+# ─── Shell UX (keep last) ───────────────────────────────────────────────────
+# autosuggestions before syntax-highlighting; syntax-highlighting must be the
+# very last thing sourced so it sees every widget defined above.
+_zsh_plugins="/opt/homebrew/share"
+[ -r "$_zsh_plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" ] \
+  && source "$_zsh_plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
+[ -r "$_zsh_plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] \
+  && source "$_zsh_plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+unset _zsh_plugins
