@@ -28,6 +28,13 @@ case ":$PATH:" in
   *) export PATH="$PNPM_HOME:$PATH" ;;
 esac
 
+# node: put the newest nvm-installed node on PATH eagerly (no nvm invocation, so
+# startup stays fast). nvm itself is lazy-loaded above and still auto-switches per
+# .nvmrc; this just guarantees GUI apps (VS Code's env probe) always see node/npx.
+_node_bin=("$HOME"/.nvm/versions/node/*/bin(Nn[-1]))
+[[ -n "$_node_bin" ]] && export PATH="$_node_bin:$PATH"
+unset _node_bin
+
 # ─── Completions ──────────────────────────────────────────────────────────
 # Docker CLI completions
 fpath=("$HOME/.docker/completions" $fpath)
@@ -170,6 +177,8 @@ precmd_functions+=(_prompt_precmd)
 
 # ─── Secrets ──────────────────────────────────────────────────────────────
 [ -f "$HOME/.zsh_secrets" ] && source "$HOME/.zsh_secrets"
+export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/Library/Python/3.9/bin:$PATH"
 
 # ─── Shell UX (keep last) ───────────────────────────────────────────────────
 # autosuggestions before syntax-highlighting; syntax-highlighting must be the
