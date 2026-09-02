@@ -57,10 +57,12 @@ _aws_badge() {   # colored [env] badge per profile risk
     *)            printf '\033[2m[?]\033[0m'     ;;  # dim
   esac
 }
-_aws_session_of() {   # echo the sso_session of a profile (empty if none)
-  awk -v p="$1" '
+typeset -gA _aws_sess_cache _aws_sso_hash_cache
+_aws_session_of() {   # echo the sso_session of a profile (empty if none), memoised
+  [[ -n ${_aws_sess_cache[$1]+x} ]] || _aws_sess_cache[$1]=$(awk -v p="$1" '
     /^\[profile /{c=$2; sub(/\]$/,"",c)}
-    /^[[:space:]]*sso_session[[:space:]]*=/{if(c==p){print $NF; exit}}' "${AWS_CONFIG_FILE:-$HOME/.aws/config}"
+    /^[[:space:]]*sso_session[[:space:]]*=/{if(c==p){print $NF; exit}}' "${AWS_CONFIG_FILE:-$HOME/.aws/config}")
+  print -r -- "${_aws_sess_cache[$1]}"
 }
 assume() {
   local cfg="${AWS_CONFIG_FILE:-$HOME/.aws/config}" pick scope sess console=0
@@ -137,7 +139,8 @@ _aws_prompt() {
   local sess hash f body exp now
   sess=$(_aws_session_of "$AWS_PROFILE")
   if [[ -n "$sess" ]]; then
-    hash=$(printf '%s' "$sess" | shasum | cut -c1-40)
+    hash=${_aws_sso_hash_cache[$sess]}
+    [[ -n "$hash" ]] || { hash=$(printf '%s' "$sess" | shasum | cut -c1-40); _aws_sso_hash_cache[$sess]=$hash }
     f="$HOME/.aws/sso/cache/$hash.json"
     [[ -r "$f" ]] && body=$(<"$f")
   fi
@@ -151,11 +154,19 @@ _aws_prompt() {
     print -n "%F{red}aws:${AWS_PROFILE} ✗%f"
   fi
 }
-setopt prompt_subst
-RPROMPT='$(_aws_prompt)'
+setopt prompt_subst   # kept for anything else that wants it in a prompt
 
-# eastwood bolds its trailing "$" (%B$%b); keep the $, drop the bold
-PROMPT='$(git_custom_status)%{$fg[cyan]%}[%~% ]%{$reset_color%}$ '
+# Assemble both prompts in precmd instead of leaving $(...) inside PROMPT/RPROMPT.
+# Command substitution in a prompt re-runs on every redraw (Ctrl-C, SIGWINCH, fzf
+# tearing down its inline window), so each redraw re-forked git and the AWS lookups,
+# and a redraw landing while a hook held `emulate -L zsh` (prompt_subst off in there)
+# printed a literal "$(_aws_prompt)" instead of expanding it.
+# eastwood also bolds its trailing "$" (%B$%b); keep the $, drop the bold.
+_prompt_precmd() {
+  PROMPT="$(git_custom_status)%{$fg[cyan]%}[%~% ]%{$reset_color%}$ "
+  RPROMPT="$(_aws_prompt)"
+}
+precmd_functions+=(_prompt_precmd)
 
 # ─── Secrets ──────────────────────────────────────────────────────────────
 [ -f "$HOME/.zsh_secrets" ] && source "$HOME/.zsh_secrets"
