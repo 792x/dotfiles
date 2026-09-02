@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Claude Code statusline: repo, branch, the AWS account this tree points at, and
-# which stage terraform-output.json was generated for. Everything here must stay
-# cheap (no git status, no network) since it runs on every render.
+# Claude Code statusline: repo, branch, whether this is a private worktree, the
+# AWS account the tree points at, and the environment terraform is initialised
+# for. Everything here must stay cheap (no git status, no network) since it runs
+# on every render.
 set -uo pipefail
 
 input=$(cat)
@@ -17,16 +18,14 @@ if [ -z "$root" ]; then
   exit 0
 fi
 
-# In a private worktree the directory is named <repo>-<slug>; show the repo it
-# belongs to and let the wt marker carry the rest.
+# A worktree is private to one session; the main checkout is shared. Name the
+# repo after the main tree either way, so a worktree still says where it came
+# from, and mark the worktree with its own directory name.
 main_tree=$(git -C "$root" worktree list --porcelain 2>/dev/null | /usr/bin/sed -n '1s/^worktree //p')
 repo=$(basename "${main_tree:-$root}")
 branch=$(git -C "$root" symbolic-ref --short HEAD 2>/dev/null || echo detached)
-# a worktree under the wt root is a private tree; the main checkout is shared
-case "$root" in
-  "${WT_ROOT:-$HOME/Code/wt}"/*) tree="${green}wt${off}" ;;
-  *) tree="" ;;
-esac
+tree=""
+[ -n "$main_tree" ] && [ "$main_tree" != "$root" ] && tree="${green}wt:$(basename "$root")${off}"
 
 # profile: the exported one if we have it, else whatever direnv would export
 profile=${AWS_PROFILE:-}
@@ -34,11 +33,19 @@ if [ -z "$profile" ] && [ -r "$root/.envrc" ]; then
   profile=$(/usr/bin/sed -n 's/.*AWS_PROFILE=["'"'"']\{0,1\}\([A-Za-z0-9_-]*\).*/\1/p' "$root/.envrc" | head -1)
 fi
 
-out="$root/terraform/terraform-output.json"
+# stage: the environment `terraform apply` would hit from this tree. The
+# initialised backend names it, so no terraform run is needed to read it.
 stage=""
-if [ -r "$out" ]; then
-  stage=$(LC_ALL=C /usr/bin/grep -o -m1 'env-\(dev3\|dev2\|dev\|test\|beta\|prod\)-eu-' "$out" 2>/dev/null)
-  stage=${stage#env-}; stage=${stage%-eu-}
+for f in "$root/infrastructure/.terraform/terraform.tfstate" "$root/terraform/.terraform/terraform.tfstate"; do
+  [ -r "$f" ] || continue
+  stage=$(LC_ALL=C /usr/bin/grep -o -m1 -E -- '-(dev[0-9]*|test|beta|stg|staging|prod)-terraform-(state|lock)' "$f" 2>/dev/null)
+  stage=${stage#-}; stage=${stage%-terraform-*}
+  [ -n "$stage" ] && break
+done
+# repos that publish a generated output file instead name the stage in it
+if [ -z "$stage" ] && [ -r "$root/terraform/terraform-output.json" ]; then
+  stage=$(LC_ALL=C /usr/bin/grep -o -m1 -E -- '-(dev[0-9]*|test|beta|stg|prod)-eu-' "$root/terraform/terraform-output.json" 2>/dev/null)
+  stage=${stage#-}; stage=${stage%-eu-}
 fi
 
 line="${cyan}${repo}${off} ${dim}${branch}${off}"
@@ -46,12 +53,13 @@ line="${cyan}${repo}${off} ${dim}${branch}${off}"
 if [ -n "$profile" ]; then
   case "$profile" in
     *prod*) line="$line ${dim}·${off} ${red}${profile}${off}" ;;
-    *beta*|*test*) line="$line ${dim}·${off} ${yellow}${profile}${off}" ;;
+    *beta*|*test*|*stg*|*staging*) line="$line ${dim}·${off} ${yellow}${profile}${off}" ;;
     *) line="$line ${dim}·${off} ${green}${profile}${off}" ;;
   esac
 fi
 if [ -n "$stage" ]; then
-  if [ -n "$profile" ] && [ "${profile#env-}" != "$stage" ]; then
+  # the profile's last segment is its environment: env-prod and prod agree
+  if [ -n "$profile" ] && [ "${profile##*-}" != "$stage" ]; then
     line="$line ${dim}·${off} ${red}tf:${stage}${off}"      # disagrees with the profile
   else
     line="$line ${dim}· tf:${stage}${off}"
