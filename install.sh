@@ -16,6 +16,8 @@ link .zshenv       .zshenv
 link .zprofile     .zprofile
 link ghostty/config .config/ghostty/config
 link config/direnv/direnv.toml .config/direnv/direnv.toml
+link claude/statusline.sh .claude/statusline.sh
+link claude/hooks/guard-shared-worktree.sh .claude/hooks/guard-shared-worktree.sh
 
 echo
 echo "Done. Create ~/.zsh_secrets for tokens (see README)."

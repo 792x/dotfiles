@@ -45,6 +45,9 @@ compinit
 source <(fzf --zsh)            # fzf keybindings + history search (Ctrl-R)
 eval "$(direnv hook zsh)"      # per-repo .envrc (sets AWS_PROFILE, etc.)
 
+# wt / senv / iac / ck / assume completion (see zsh/local-tools.zsh)
+source "${${(%):-%x}:A:h}/zsh/local-tools.zsh"
+
 # ─── AWS ────────────────────────────────────────────────────────────────────
 # `assume`            — pick an AWS profile (fzf, risk-badged), log in via SSO if
 #                       needed, and set AWS_PROFILE for the shell. One token store
@@ -76,6 +79,8 @@ assume() {
   [[ "$1" == -c || "$1" == --console ]] && { console=1; shift; }
   case "$1" in
     -a|--all) scope=all ;;
+    -|--back) pick="$_AWS_PROFILE_PREV"
+              [[ -n "$pick" ]] || { print -u2 "assume: no previous profile"; return 1 } ;;
     "")       scope=auto ;;
     *)        pick="$1" ;;   # explicit profile name
   esac
@@ -95,6 +100,7 @@ assume() {
   if (( console )); then _aws_console "$pick"; return; fi   # -c: open web console instead
 
   unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN   # let AWS_PROFILE win
+  [[ -n "$AWS_PROFILE" && "$AWS_PROFILE" != "$pick" ]] && typeset -g _AWS_PROFILE_PREV="$AWS_PROFILE"
   export AWS_PROFILE="$pick"
 
   if ! aws sts get-caller-identity >/dev/null 2>&1; then            # only log in if token missing/expired
