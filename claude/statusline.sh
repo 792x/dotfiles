@@ -17,7 +17,10 @@ if [ -z "$root" ]; then
   exit 0
 fi
 
-repo=$(basename "$root")
+# In a private worktree the directory is named <repo>-<slug>; show the repo it
+# belongs to and let the wt marker carry the rest.
+main_tree=$(git -C "$root" worktree list --porcelain 2>/dev/null | /usr/bin/sed -n '1s/^worktree //p')
+repo=$(basename "${main_tree:-$root}")
 branch=$(git -C "$root" symbolic-ref --short HEAD 2>/dev/null || echo detached)
 # a worktree under the wt root is a private tree; the main checkout is shared
 case "$root" in

@@ -23,13 +23,23 @@ cwd=$(parse cwd)
 [ -z "$cwd" ] && cwd=$PWD
 [ -z "$cmd" ] && exit 0
 
-# Which tree would this run in: an explicit -C wins, else the session cwd.
-target=$cwd
-case "$cmd" in
-  *"git -C "*) target=$(printf '%s' "$cmd" | /usr/bin/sed -n 's/.*git -C[[:space:]]\{1,\}\([^[:space:]]*\).*/\1/p' | head -1) ;;
-esac
+# Which tree would this actually run in? An explicit -C wins, then a `cd` inside
+# the command (the payload's cwd is the session's, not the command's), then cwd.
+target=$(printf '%s' "$cmd" | /usr/bin/python3 -c '
+import re, sys
+cmd = sys.stdin.read()
+m = re.search(r"git\s+-C\s+(\S+)", cmd)
+if not m:
+    m = re.search(r"(?:\A|[;|\n]|&&|\|\|)[ \t]*cd\s+(?!-)([^\s;|&]+)", cmd)
+print(m.group(1).strip("\"") if m else "")
+' 2>/dev/null)
+[ -z "$target" ] && target=$cwd
 
 resolve() { ( cd "$1" 2>/dev/null && pwd -P ) || printf '%s' "$1"; }
+case "$target" in
+  /*|"~"*) ;;
+  *) target="$cwd/$target" ;;                 # a relative cd is relative to cwd
+esac
 target=$(resolve "${target/#\~/$HOME}")
 shared=$(resolve "$SHARED")
 
