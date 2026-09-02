@@ -19,7 +19,7 @@ background-blur-radius = 20
 # background is gray-870 (#111111); selection is the app's #0099ff at 30% flattened
 background = 111111
 foreground = eaecf0
-cursor-color = 0099ff
+cursor-color = eaecf0
 cursor-text = 111111
 cursor-style = bar
 selection-background = 0c3a58
