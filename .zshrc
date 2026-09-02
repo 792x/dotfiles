@@ -154,6 +154,9 @@ _aws_prompt() {
 setopt prompt_subst
 RPROMPT='$(_aws_prompt)'
 
+# eastwood bolds its trailing "$" (%B$%b); keep the $, drop the bold
+PROMPT='$(git_custom_status)%{$fg[cyan]%}[%~% ]%{$reset_color%}$ '
+
 # ─── Secrets ──────────────────────────────────────────────────────────────
 [ -f "$HOME/.zsh_secrets" ] && source "$HOME/.zsh_secrets"
 

@@ -1,8 +1,12 @@
-# Ghostty — JetBrains Fleet (Dark) theme, glassy/translucent
-# Matches VSCode "Jetbrains Fleet" theme + JetBrains Mono @ 13pt
+# Ghostty — Claude Code terminal theme (dark), glassy/translucent
+# Matches the Claude.app terminal pane: Anthropic Mono @ 12pt + its palette
 
+# Anthropic Mono (extracted from Claude.app, installed from ~/Documents/Anthropic Mono)
+# JetBrains Mono stays as fallback: Anthropic Mono is a 655-codepoint webfont subset
+# (no braille, no Cyrillic/Greek, few powerline glyphs)
+font-family = Anthropic Mono
 font-family = JetBrains Mono
-font-size = 15
+font-size = 12
 
 # Match VSCode: ligatures off
 font-feature = -calt
@@ -11,32 +15,33 @@ font-feature = -calt
 background-opacity = 0.92
 background-blur-radius = 20
 
-# Base colors (Fleet Dark)
-background = 181818
-foreground = d6d6dd
-cursor-color = d6d6dd
-cursor-text = 181818
+# Base colors — Claude Code terminal (dark), extracted from Claude.app
+# background is gray-870 (#111111); selection is the app's #0099ff at 30% flattened
+background = 111111
+foreground = eaecf0
+cursor-color = 0099ff
+cursor-text = 111111
 cursor-style = bar
-selection-background = 194176
-selection-foreground = d6d6dd
+selection-background = 0c3a58
+selection-foreground = eaecf0
 
-# ANSI palette (Fleet terminal colors)
-palette = 0=#676767
-palette = 1=#f14c4c
-palette = 2=#15ac91
-palette = 3=#e5b95c
-palette = 4=#4c9df3
-palette = 5=#e567dc
-palette = 6=#75d3ba
-palette = 7=#d6d6dd
-palette = 8=#676767
-palette = 9=#f14c4c
-palette = 10=#15ac91
-palette = 11=#e5b95c
-palette = 12=#4c9df3
-palette = 13=#e567dc
-palette = 14=#75d3ba
-palette = 15=#d6d6dd
+# ANSI palette (Claude Code terminal)
+palette = 0=#262626
+palette = 1=#ff3a30
+palette = 2=#32d74b
+palette = 3=#ffd014
+palette = 4=#0099ff
+palette = 5=#ff2c56
+palette = 6=#b796ff
+palette = 7=#a6a6a6
+palette = 8=#525252
+palette = 9=#ff5047
+palette = 10=#32d74b
+palette = 11=#ffd014
+palette = 12=#0087ee
+palette = 13=#ff2c56
+palette = 14=#b796ff
+palette = 15=#ededed
 
 # Window chrome to match the glassy feel
 macos-titlebar-style = transparent
@@ -47,8 +52,10 @@ window-padding-y = 8
 window-width = 120
 window-height = 32
 
-# Thicken font rendering on macOS (counteracts thin antialiasing)
-font-thicken = true
+# Text rendering: no macOS thickening, and gamma-corrected blending so glyph
+# weight matches how the Claude.app terminal (Chromium) renders the same font
+font-thicken = false
+alpha-blending = linear-corrected
 
 # Shell integration (zsh / oh-my-zsh): prompt tracking, cwd inheritance
 shell-integration = zsh
