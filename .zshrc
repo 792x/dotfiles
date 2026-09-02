@@ -14,6 +14,21 @@ zstyle ':omz:plugins:nvm' autoload yes
 
 source "$ZSH/oh-my-zsh.sh"
 
+# The nvm plugin's lazy mode replaces node/npm/pnpm/yarn with stub functions that
+# source nvm on first use and then call _omz_nvm_setup_completion and
+# _omz_nvm_setup_autoload. Both helpers exist only to wire up completion and
+# .nvmrc auto-switching, which are interactive features, and they are routinely
+# ABSENT in a non-interactive shell: Claude Code snapshots the shell environment
+# and captures the stub functions but not these two, so every `pnpm ...` in a tool
+# call prints two "command not found" lines before doing its job. Neutralise them
+# where they have nothing to do. Interactive sessions keep the real ones.
+# The snapshot shell reports itself as interactive, so test CLAUDE_CODE_ENTRYPOINT
+# too: without it the stubs never reach the snapshot and the noise survives.
+if [[ ! -o interactive || -n $CLAUDE_CODE_ENTRYPOINT ]]; then
+  _omz_nvm_setup_completion() { : }
+  _omz_nvm_setup_autoload() { : }
+fi
+
 # ─── Environment ──────────────────────────────────────────────────────────
 export EDITOR="code --wait"   # git commits, `kubectl edit`, etc. open in VSCode
 
