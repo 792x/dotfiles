@@ -19,5 +19,10 @@ link config/direnv/direnv.toml .config/direnv/direnv.toml
 link claude/statusline.sh .claude/statusline.sh
 link claude/hooks/guard-shared-worktree.sh .claude/hooks/guard-shared-worktree.sh
 
+# The overlay for anything project-specific. Tracked dotfiles stay agnostic, so
+# a machine's client work never reaches the other machine or this public repo.
+mkdir -p "${ZSH_LOCAL_DIR:-$HOME/.config/zsh.local}"
+echo "overlay dir ${ZSH_LOCAL_DIR:-$HOME/.config/zsh.local} (untracked, per machine)"
+
 echo
 echo "Done. Create ~/.zsh_secrets for tokens (see README)."

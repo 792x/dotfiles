@@ -58,7 +58,7 @@ if [ -n "$profile" ]; then
   esac
 fi
 if [ -n "$stage" ]; then
-  # the profile's last segment is its environment: env-prod and prod agree
+  # the profile's last segment is its environment: acme-prod and prod agree
   if [ -n "$profile" ] && [ "${profile##*-}" != "$stage" ]; then
     line="$line ${dim}·${off} ${red}tf:${stage}${off}"      # disagrees with the profile
   else

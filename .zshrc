@@ -60,8 +60,16 @@ compinit
 source <(fzf --zsh)            # fzf keybindings + history search (Ctrl-R)
 eval "$(direnv hook zsh)"      # per-repo .envrc (sets AWS_PROFILE, etc.)
 
-# wt / senv / iac / ck / assume completion (see zsh/local-tools.zsh)
-source "${${(%):-%x}:A:h}/zsh/local-tools.zsh"
+# ─── Tooling ──────────────────────────────────────────────────────────────
+# This repo is public and shared by every machine, so everything tracked in it
+# must be project-agnostic: it may name a tool, never a client, repo path,
+# ticket prefix, package scope or deploy stage. Anything that names one of
+# those belongs in the local overlay below, which no machine shares with
+# another. Create it with `mkdir -p ~/.config/zsh.local` and drop *.zsh in.
+_dot_dir="${${(%):-%x}:A:h}"
+for _f in "$_dot_dir"/zsh/*.zsh(N); do source "$_f"; done
+for _f in "${ZSH_LOCAL_DIR:-$HOME/.config/zsh.local}"/*.zsh(N); do source "$_f"; done
+unset _dot_dir _f
 
 # ─── AWS ────────────────────────────────────────────────────────────────────
 # `assume`            — pick an AWS profile (fzf, risk-badged), log in via SSO if
