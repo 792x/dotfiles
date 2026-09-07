@@ -1,12 +1,11 @@
 # Ghostty — Claude Code terminal theme (dark), glassy/translucent
-# Matches the Claude.app terminal pane: Anthropic Mono @ 12pt + its palette
+# Palette matches the Claude.app terminal pane; font is PragmataPro Mono Liga @ 15pt
 
-# Anthropic Mono (extracted from Claude.app, installed from ~/Documents/Anthropic Mono)
-# JetBrains Mono stays as fallback: Anthropic Mono is a 655-codepoint webfont subset
-# (no braille, no Cyrillic/Greek, few powerline glyphs)
-font-family = Anthropic Mono
+# PragmataPro Mono Liga (Nerd Font build, installed in ~/Library/Fonts).
+# JetBrains Mono stays as the fallback for anything Pragmata lacks.
+font-family = PragmataPro Mono Liga
 font-family = JetBrains Mono
-font-size = 12
+font-size = 15
 
 # Match VSCode: ligatures off
 font-feature = -calt
