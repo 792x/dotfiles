@@ -73,3 +73,8 @@ window-inherit-working-directory = true
 
 # Global dropdown terminal (summon over anything)
 keybind = global:cmd+grave_accent=toggle_quick_terminal
+
+# Machine-local overrides — optional, untracked, per machine. Loaded last, so
+# anything here wins. Display scaling differs per machine; font-size lives here
+# when a machine needs one other than the default above.
+config-file = ?~/.config/ghostty/config.local
