@@ -9,7 +9,7 @@ macOS shell + terminal setup: zsh (Oh My Zsh) + Ghostty + VSCode/Claude Code.
 | `.zshrc` | `~/.zshrc` | Interactive zsh: OMZ, nvm (lazy+autoload), fzf, direnv, pnpm, aliases |
 | `.zshenv` | `~/.zshenv` | Minimal (runs for all shells) |
 | `.zprofile` | `~/.zprofile` | Login-shell PATH: Homebrew, JetBrains Toolbox |
-| `ghostty/config` | `~/.config/ghostty/config` | Ghostty: JetBrains Fleet theme, JetBrains Mono, translucent |
+| `ghostty/config` | `~/.config/ghostty/config` | Ghostty: Claude Code dark theme, Anthropic Mono, translucent |
 | `config/direnv/direnv.toml` | `~/.config/direnv/direnv.toml` | direnv: trust `.envrc` under `~/Code` (no per-change `allow`) |
 | `zsh/*.zsh` | sourced by `.zshrc` | Shell tools: `wt` (worktree per task), `ck` (turbo summary), `assume` completion |
 | `claude/statusline.sh` | `~/.claude/statusline.sh` | Claude Code statusline: repo, branch, worktree, AWS profile, terraform stage |
