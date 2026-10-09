@@ -18,6 +18,7 @@ link ghostty/config .config/ghostty/config
 link config/direnv/direnv.toml .config/direnv/direnv.toml
 link claude/statusline.sh .claude/statusline.sh
 link claude/hooks/guard-shared-worktree.sh .claude/hooks/guard-shared-worktree.sh
+link claude/skills/peakz-padel-lessons .claude/skills/peakz-padel-lessons
 
 # The overlay for anything project-specific. Tracked dotfiles stay agnostic, so
 # a machine's client work never reaches the other machine or this public repo.

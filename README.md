@@ -14,6 +14,7 @@ macOS shell + terminal setup: zsh (Oh My Zsh) + Ghostty + VSCode/Claude Code.
 | `zsh/*.zsh` | sourced by `.zshrc` | Shell tools: `wt` (worktree per task), `ck` (turbo summary), `assume` completion |
 | `claude/statusline.sh` | `~/.claude/statusline.sh` | Claude Code statusline: repo, branch, worktree, AWS profile, terraform stage |
 | `claude/hooks/guard-shared-worktree.sh` | `~/.claude/hooks/` | Blocks git commands that discard a shared checkout's uncommitted work |
+| `claude/skills/peakz-padel-lessons/` | `~/.claude/skills/peakz-padel-lessons` | Claude Code skill: find Peakz Padel lessons and clinics through their public API |
 
 ## What belongs here
 
