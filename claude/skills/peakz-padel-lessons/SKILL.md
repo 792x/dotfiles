@@ -64,14 +64,15 @@ Organisation id: `df82f4dd-fd87-4af5-9c2f-656fe1a44357` (`$ORG` below).
 - Answer in the user's language (Dutch by default) with a table per kind:
   lessons, then clinics. Each row: date, weekday, time, location, title,
   trainer, price, free spots.
-- Lesson package `price` appears to be for the whole booking (up to 4 players),
-  not per person. A single lesson is sold as "Privéles voor groep of individu".
-  Say this is unconfirmed and should be checked when booking.
+- Lesson `price` is for the whole booking, whether 1, 2, 3 or 4 players come
+  (the lesson detail page says so). Divide by 4 for a full group's per-person cost.
 - Clinic prices are per person.
 - No evening private lessons listed? Suggest contacting the location directly,
   because trainers have time that isn't published.
-- End with the booking links: https://www.peakzpadel.nl/reserveren/lessons and
-  https://www.peakzpadel.nl/reserveren/kalender?categoryIds=302
+- Give every row its direct booking link (the script's `url` field), so the user
+  can open that lesson or clinic in one click:
+  lesson `https://www.peakzpadel.nl/reserveren/lessons/packages/<id>`,
+  clinic `https://www.peakzpadel.nl/reserveren/kalender-event?id=<id>`.
 
 ## If the API changes
 

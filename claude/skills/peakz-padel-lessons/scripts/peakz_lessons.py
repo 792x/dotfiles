@@ -25,6 +25,8 @@ EN_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "
 
 BOOK_LESSONS = "https://www.peakzpadel.nl/reserveren/lessons"
 BOOK_CLINICS = "https://www.peakzpadel.nl/reserveren/kalender?categoryIds=302"
+LESSON_URL = "https://www.peakzpadel.nl/reserveren/lessons/packages/{id}"
+CLINIC_URL = "https://www.peakzpadel.nl/reserveren/kalender-event?id={id}"
 
 
 def get(url):
@@ -72,6 +74,7 @@ def lessons(locs, days, from_time, to_time):
             "trainer": x["trainerName"],
             "free": x["availableSlots"],
             "id": x["id"],
+            "url": LESSON_URL.format(id=x["id"]),
         })
     return sorted(out, key=lambda r: (r["date"], r["start"]))
 
@@ -105,6 +108,7 @@ def clinics(locs, days, from_time, to_time):
             "price": e["price"],
             "free": cap - (e.get("countGoing") or 0),
             "id": e["id"],
+            "url": CLINIC_URL.format(id=e["id"]),
         })
     return sorted(out, key=lambda r: (r["date"], r["start"]))
 
@@ -137,11 +141,11 @@ def main():
     print(f"\nLESSONS  ({', '.join(sorted(locs))}; {','.join(DAYS[i] for i in range(7) if DAYS[i] in days)}; {a.from_time}-{a.to_time})\n")
     for r in les:
         print(f"{r['date']} {r['day']} {r['start']}-{r['end']}  {r['location']:<22} {r['title']:<28} "
-              f"{r['lessons']}x  €{r['price']:.0f}  {r['trainer'] or '-'}  ({r['free']} free)")
+              f"{r['lessons']}x  €{r['price']:.0f}  {r['trainer'] or '-'}  ({r['free']} free)\n    {r['url']}")
     print("\nCLINICS\n")
     for r in cli:
         print(f"{r['date']} {r['day']} {r['start']}-{r['end']}  {r['location']:<22} {r['title']:<42} "
-              f"€{r['price']:.2f}  {'FULL' if r['free'] <= 0 else str(r['free']) + ' free'}")
+              f"€{r['price']:.2f}  {'FULL' if r['free'] <= 0 else str(r['free']) + ' free'}\n    {r['url']}")
     print(f"\nBook lessons: {BOOK_LESSONS}\nBook clinics: {BOOK_CLINICS}\n")
 
 
