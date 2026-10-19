@@ -22,8 +22,20 @@ with a fixed group of four, so beginner-level offers ("Starterspakket", level
 9/10-only clinics) are probably too easy. Show them, but say so.
 
 Flags: `--from 18:00`, `--to 22:00`, `--days ma,di,wo,do`,
-`--locations Zeehaenkade,Spoorzone`, `--json`, `--list-locations`.
+`--locations Zeehaenkade,Spoorzone`, `--json`, `--list-locations`, `--new`.
 Location names are the short form (`Zuidoost`, not `Amsterdam - Zuidoost`).
+
+## Daily check for new offers
+
+`--new` prints only bookable items (free spots > 0) whose id an earlier `--new`
+run has not recorded, then records everything it fetched. The state lives in
+`~/.local/state/peakz-lessons/seen.json` (per machine). The first run only
+records a baseline and reports nothing. When nothing is new it prints
+`Nothing new.`
+
+For a scheduled morning check: run with `--new`. If it prints `Nothing new.`,
+end with one line saying so and no notification. Otherwise report the new items
+as below and send one short notification, e.g. "Peakz: nieuwe clinic wo 21 okt 19:00 Zuidoost (2 vrij)".
 
 If the user asks for something the script doesn't cover, call the endpoints
 below with `curl` or Python.
@@ -49,7 +61,9 @@ Organisation id: `df82f4dd-fd87-4af5-9c2f-656fe1a44357` (`$ORG` below).
 
 - `GET https://api.foys.io/foys/api/v2/pub/public-calendar?organisationId=$ORG&start=<ISO date>Z&calendarItemTypes[]=Event&skipCount=0&maxResultCount=200`
   returns every event at every location (thousands of rows, some years ahead).
-  Items carry no category, so find clinics by `"Clinic"` in `title`.
+  Items carry no category field, but the query takes `&categoryIds[]=302`
+  (Academy), which returns only clinics plus the single lessons some locations
+  post as events ("🎓 Losse les -Trainer …"). The script uses that filter.
   `start`/`end` are local time without an offset. Free spots =
   `maxAmountOfAttendances - countGoing` (where `countGoing` null = 0).
   `description` is HTML holding level, trainer and the exact price.

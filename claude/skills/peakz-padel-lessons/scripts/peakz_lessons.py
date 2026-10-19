@@ -8,12 +8,15 @@ Reads the public Foys API behind peakzpadel.nl (no login, no cookies).
   peakz_lessons.py --locations Zeehaenkade,Vechtsebanen --days ma,di,wo,do
   peakz_lessons.py --list-locations
   peakz_lessons.py --json
+  peakz_lessons.py --new          # only what appeared since the last --new run
 """
 import argparse
 import json
+import os
 import sys
 import urllib.request
 from datetime import datetime
+from pathlib import Path
 
 ORG = "df82f4dd-fd87-4af5-9c2f-656fe1a44357"
 LESSONS_API = f"https://api.foys.io/trainer-booking/public/api/v1/organisations/{ORG}"
@@ -27,6 +30,8 @@ BOOK_LESSONS = "https://www.peakzpadel.nl/reserveren/lessons"
 BOOK_CLINICS = "https://www.peakzpadel.nl/reserveren/kalender?categoryIds=302"
 LESSON_URL = "https://www.peakzpadel.nl/reserveren/lessons/packages/{id}"
 CLINIC_URL = "https://www.peakzpadel.nl/reserveren/kalender-event?id={id}"
+ACADEMY_CATEGORY = 302  # clinics, plus single lessons some locations post as events
+STATE_FILE = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "peakz-lessons/seen.json"
 
 
 def get(url):
@@ -83,13 +88,14 @@ def clinics(locs, days, from_time, to_time):
     today = datetime.now().strftime("%Y-%m-%dT00:00:00.000Z")
     rows = paged(
         f"{CALENDAR_API}/public-calendar?organisationId={ORG}&start={today}"
-        "&calendarItemTypes[]=Event&skipCount={skip}&maxResultCount={n}",
+        f"&calendarItemTypes[]=Event&categoryIds[]={ACADEMY_CATEGORY}"
+        "&skipCount={skip}&maxResultCount={n}",
         page=200,
     )
     out = []
     for e in rows:
         loc = next((l["name"] for l in e["locations"] if l["name"] in locs), None)
-        if not loc or "clinic" not in e["title"].lower():
+        if not loc:
             continue
         start = datetime.fromisoformat(e["start"])
         if DAYS[start.weekday()] not in days:
@@ -121,6 +127,8 @@ def main():
     p.add_argument("--to", dest="to_time", default="24:00", help="latest start, exclusive, HH:MM")
     p.add_argument("--json", action="store_true", help="print JSON instead of a table")
     p.add_argument("--list-locations", action="store_true", help="print all Peakz locations and exit")
+    p.add_argument("--new", action="store_true",
+                   help=f"show only bookable items not seen by an earlier --new run (state: {STATE_FILE})")
     a = p.parse_args()
 
     if a.list_locations:
@@ -132,6 +140,21 @@ def main():
     days = {s.strip().lower() for s in a.days.split(",") if s.strip()}
     les = lessons(locs, days, a.from_time, a.to_time)
     cli = clinics(locs, days, a.from_time, a.to_time)
+
+    if a.new:
+        first_run = not STATE_FILE.exists()
+        seen = set() if first_run else set(json.loads(STATE_FILE.read_text()))
+        current = {str(r["id"]) for r in les + cli}
+        les = [r for r in les if str(r["id"]) not in seen and r["free"] > 0]
+        cli = [r for r in cli if str(r["id"]) not in seen and r["free"] > 0]
+        STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        STATE_FILE.write_text(json.dumps(sorted(seen | current)))
+        if first_run:
+            print(f"First --new run: recorded {len(current)} items as the baseline in {STATE_FILE}.")
+            return
+        if not les and not cli and not a.json:
+            print("Nothing new.")
+            return
 
     if a.json:
         json.dump({"lessons": les, "clinics": cli}, sys.stdout, ensure_ascii=False, indent=2)
