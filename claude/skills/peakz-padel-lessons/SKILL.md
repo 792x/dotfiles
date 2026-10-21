@@ -104,6 +104,16 @@ Organisation id: `df82f4dd-fd87-4af5-9c2f-656fe1a44357` (`$ORG` below).
   lesson `https://www.peakzpadel.nl/reserveren/lessons/packages/<id>`,
   clinic `https://www.peakzpadel.nl/reserveren/kalender-event?id=<id>`.
 
+## Open Matches are not public
+
+Peakz "Open Matches" (rating-ranged games other players can join, booked via
+Team/Pay) only show in the logged-in Peakz app dashboard, filtered by the
+viewer's Peakz Rating and favourite clubs. No public endpoint lists them: the
+`/open-matches` route in the Foys web bundle is for competition referees, and
+court booking on the website requires login. Never log in for the user; point
+them to the app instead, or offer the public alternatives (Jack's Hustle, King
+of the Court).
+
 ## If the API changes
 
 Open https://www.peakzpadel.nl/reserveren/lessons in a browser and read the
