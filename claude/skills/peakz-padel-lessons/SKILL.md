@@ -21,16 +21,21 @@ starting 17:00 or later, at **Vechtsebanen** and **Zeehaenkade** (Utrecht) and
 with a fixed group of four, so beginner-level offers ("Starterspakket", level
 9/10-only clinics) are probably too easy. Show them, but say so.
 
+It also lists **King of the Court** sessions at Vechtsebanen and Zeehaenkade on
+any day and time, a social format the user wants tracked too.
+
 Flags: `--from 18:00`, `--to 22:00`, `--days ma,di,wo,do`,
-`--locations Zeehaenkade,Spoorzone`, `--json`, `--list-locations`, `--new`.
+`--locations Zeehaenkade,Spoorzone`, `--kotc-locations …` (empty string skips
+King of the Court), `--kotc-days za,zo`, `--json`, `--list-locations`, `--new`.
 Location names are the short form (`Zuidoost`, not `Amsterdam - Zuidoost`).
 
 ## Daily check for new offers
 
 `--new` prints only bookable items (free spots > 0) whose id an earlier `--new`
 run has not recorded, then records everything it fetched. The state lives in
-`~/.local/state/peakz-lessons/seen.json` (per machine). The first run only
-records a baseline and reports nothing. When nothing is new it prints
+`~/.local/state/peakz-lessons/seen.json` (per machine), per kind (`lessons`,
+`clinics`, `kotc`). A kind with no state yet is recorded as a baseline and not
+reported, so adding a kind later doesn't flood the next report. When nothing is new it prints
 `Nothing new.`
 
 For a scheduled morning check: run with `--new`. If it prints `Nothing new.`,
@@ -70,8 +75,14 @@ Organisation id: `df82f4dd-fd87-4af5-9c2f-656fe1a44357` (`$ORG` below).
 - Calendar categories (`/calendar/$ORG/categories`): 302 = Academy Clinics,
   3 = Jack's Hustle, 5 = King of the Court, 10 = Train with a Pro, 12 = Kids.
 - Titles carry the Peakz rating: lower is stronger, 10 = beginner. "STA" =
-  Starters (KNLTB 9–8). Jack's Hustle, King of the Court and Funky Friday are
-  social play formats, not lessons. Mention them only if asked.
+  Starters (KNLTB 9–8). Jack's Hustle and Funky Friday are social play
+  formats, not lessons. Mention them only if asked.
+- King of the Court: you sign up per duo. `price` is per duo (the description
+  gives the per-person price) and `maxAmountOfAttendances` counts duos. Category
+  5 also holds ladies-only "Queen of the Court", and the mixed-couples edition
+  is outside category 5, so the script matches titles on "King of the Court" or
+  "KOTC". In Utrecht it runs Sunday 11:00–13:30 (INT at both locations, ADV at
+  Vechtsebanen) plus the odd Saturday evening.
 
 ## Reporting
 
