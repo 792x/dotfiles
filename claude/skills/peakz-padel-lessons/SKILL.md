@@ -21,8 +21,9 @@ starting 17:00 or later, at **Vechtsebanen** and **Zeehaenkade** (Utrecht) and
 with a fixed group of four, so beginner-level offers ("Starterspakket", level
 9/10-only clinics) are probably too easy. Show them, but say so.
 
-It also lists **King of the Court** sessions at Vechtsebanen and Zeehaenkade on
-any day and time, a social format the user wants tracked too.
+It also lists **King of the Court** sessions at Vechtsebanen, Zeehaenkade and
+Zuidoost, a social format the user wants tracked too: weekends at any time,
+weekdays only from `--from` (17:00) on, matching when the user can play.
 
 Flags: `--from 18:00`, `--to 22:00`, `--days ma,di,wo,do`,
 `--locations Zeehaenkade,Spoorzone`, `--kotc-locations …` (empty string skips
@@ -78,11 +79,15 @@ Organisation id: `df82f4dd-fd87-4af5-9c2f-656fe1a44357` (`$ORG` below).
   Starters (KNLTB 9–8). Jack's Hustle and Funky Friday are social play
   formats, not lessons. Mention them only if asked.
 - King of the Court: you sign up per duo. `price` is per duo (the description
-  gives the per-person price) and `maxAmountOfAttendances` counts duos. Category
+  gives the per-person price) and `maxAmountOfAttendances` counts duos. The
+  exception is the "KOTC Hustle" / "Jack's Hustle KOTC" editions (Zuidoost's
+  only kind): individual sign-up, €10 per person, about 12–16 places. The
+  script's `unit` field says which (`duo` or `person`). Category
   5 also holds ladies-only "Queen of the Court", and the mixed-couples edition
   is outside category 5, so the script matches titles on "King of the Court" or
   "KOTC". In Utrecht it runs Sunday 11:00–13:30 (INT at both locations, ADV at
-  Vechtsebanen) plus the odd Saturday evening.
+  Vechtsebanen) plus the odd Saturday evening. Zuidoost runs Hustle editions on
+  weekday mornings and Saturday 13:00 (7/8/9) and 14:30 (5/6).
 
 ## Reporting
 

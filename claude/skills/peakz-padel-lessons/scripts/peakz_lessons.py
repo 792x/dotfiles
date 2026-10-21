@@ -2,7 +2,8 @@
 """List adult Peakz Padel lessons, clinics and King of the Court sessions.
 
 Lessons and clinics are filtered by --locations/--days/--from/--to; King of the
-Court sessions by --kotc-locations/--kotc-days (any time of day).
+Court sessions by --kotc-locations/--kotc-days: weekends at any time, weekdays
+only from --from on.
 
 Reads the public Foys API behind peakzpadel.nl (no login, no cookies).
 
@@ -28,7 +29,7 @@ LESSONS_API = f"https://api.foys.io/trainer-booking/public/api/v1/organisations/
 CALENDAR_API = "https://api.foys.io/foys/api/v2/pub"
 
 DEFAULT_LOCATIONS = "Vechtsebanen,Zeehaenkade,Kauwgomballenkwartier,Zuidoost"
-DEFAULT_KOTC_LOCATIONS = "Vechtsebanen,Zeehaenkade"
+DEFAULT_KOTC_LOCATIONS = "Vechtsebanen,Zeehaenkade,Zuidoost"
 # Category 5 also holds ladies-only "Queen of the Court", and the mixed-couples
 # edition sits outside it, so match on the title instead.
 KOTC_TITLE = re.compile(r"king of the court|kotc", re.I)
@@ -128,7 +129,7 @@ def clinics(locs, days, from_time, to_time):
     return sorted(out, key=lambda r: (r["date"], r["start"]))
 
 
-def kotc(locs, days):
+def kotc(locs, days, from_time):
     today = datetime.now().strftime("%Y-%m-%dT00:00:00.000Z")
     rows = paged(
         f"{CALENDAR_API}/public-calendar?organisationId={ORG}&start={today}"
@@ -143,7 +144,11 @@ def kotc(locs, days):
         start = datetime.fromisoformat(e["start"])
         if DAYS[start.weekday()] not in days:
             continue
+        if start.weekday() < 5 and start.strftime("%H:%M") < from_time:
+            continue
         cap = e.get("maxAmountOfAttendances") or 0
+        # Hustle editions take individual sign-ups; the rest are booked per duo.
+        unit = "person" if "hustle" in e["title"].lower() else "duo"
         out.append({
             "kind": "kotc",
             "date": start.strftime("%Y-%m-%d"),
@@ -152,8 +157,9 @@ def kotc(locs, days):
             "end": e["end"][11:16],
             "location": loc,
             "title": e["title"],
-            "price": e["price"],  # per duo
-            "free": cap - (e.get("countGoing") or 0),  # duos
+            "unit": unit,
+            "price": e["price"],  # per unit
+            "free": cap - (e.get("countGoing") or 0),  # in units
             "id": e["id"],
             "url": CLINIC_URL.format(id=e["id"]),
         })
@@ -211,7 +217,7 @@ def main():
     results = {
         "lessons": lessons(locs, days, a.from_time, a.to_time),
         "clinics": clinics(locs, days, a.from_time, a.to_time),
-        "kotc": kotc(kotc_locs, kotc_days) if kotc_locs else [],
+        "kotc": kotc(kotc_locs, kotc_days, a.from_time) if kotc_locs else [],
     }
 
     if a.new:
@@ -237,10 +243,10 @@ def main():
         print(f"{r['date']} {r['day']} {r['start']}-{r['end']}  {r['location']:<22} {r['title']:<42} "
               f"€{r['price']:.2f}  {status(r)}\n    {r['url']}")
     if kotc_locs:
-        print(f"\nKING OF THE COURT  ({', '.join(sorted(kotc_locs))}; {','.join(d for d in DAYS if d in kotc_days)}; price and spots per duo)\n")
+        print(f"\nKING OF THE COURT  ({', '.join(sorted(kotc_locs))}; {','.join(d for d in DAYS if d in kotc_days)}; weekdays from {a.from_time})\n")
         for r in results["kotc"]:
             print(f"{r['date']} {r['day']} {r['start']}-{r['end']}  {r['location']:<14} {r['title']:<48} "
-                  f"€{r['price']:.0f}/duo  {status(r)}\n    {r['url']}")
+                  f"€{r['price']:.0f}/{r['unit']}  {status(r)}\n    {r['url']}")
     print(f"\nBook lessons: {BOOK_LESSONS}\nBook clinics: {BOOK_CLINICS}\n")
 
 
