@@ -20,6 +20,8 @@ import json
 import os
 import re
 import sys
+import time
+import urllib.error
 import urllib.request
 from datetime import datetime
 from pathlib import Path
@@ -29,7 +31,7 @@ LESSONS_API = f"https://api.foys.io/trainer-booking/public/api/v1/organisations/
 CALENDAR_API = "https://api.foys.io/foys/api/v2/pub"
 
 DEFAULT_LOCATIONS = "Vechtsebanen,Zeehaenkade,Kauwgomballenkwartier,Zuidoost"
-DEFAULT_KOTC_LOCATIONS = "Vechtsebanen,Zeehaenkade,Zuidoost"
+DEFAULT_KOTC_LOCATIONS = "Vechtsebanen,Zeehaenkade,Zuidoost,Kauwgomballenkwartier"
 # Category 5 also holds ladies-only "Queen of the Court", and the mixed-couples
 # edition sits outside it, so match on the title instead.
 KOTC_TITLE = re.compile(r"king of the court|kotc", re.I)
@@ -44,10 +46,16 @@ ACADEMY_CATEGORY = 302  # clinics, plus single lessons some locations post as ev
 STATE_FILE = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "peakz-lessons/seen.json"
 
 
-def get(url):
+def get(url, attempts=4):
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-    with urllib.request.urlopen(req, timeout=30) as r:
-        return json.load(r)
+    for i in range(attempts):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as r:
+                return json.load(r)
+        except (urllib.error.URLError, ConnectionError, TimeoutError):
+            if i == attempts - 1:
+                raise
+            time.sleep(2 ** i)  # the API drops a connection now and then
 
 
 def paged(url_fmt, page):

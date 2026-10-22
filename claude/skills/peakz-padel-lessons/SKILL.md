@@ -21,8 +21,7 @@ starting 17:00 or later, at **Vechtsebanen** and **Zeehaenkade** (Utrecht) and
 with a fixed group of four, so beginner-level offers ("Starterspakket", level
 9/10-only clinics) are probably too easy. Show them, but say so.
 
-It also lists **King of the Court** sessions at Vechtsebanen, Zeehaenkade and
-Zuidoost, a social format the user wants tracked too: weekends at any time,
+It also lists **King of the Court** sessions at all four locations, a social format the user wants tracked too: weekends at any time,
 weekdays only from `--from` (17:00) on, matching when the user can play.
 
 Flags: `--from 18:00`, `--to 22:00`, `--days ma,di,wo,do`,
@@ -87,7 +86,12 @@ Organisation id: `df82f4dd-fd87-4af5-9c2f-656fe1a44357` (`$ORG` below).
   is outside category 5, so the script matches titles on "King of the Court" or
   "KOTC". In Utrecht it runs Sunday 11:00–13:30 (INT at both locations, ADV at
   Vechtsebanen) plus the odd Saturday evening. Zuidoost runs Hustle editions on
-  weekday mornings and Saturday 13:00 (7/8/9) and 14:30 (5/6).
+  weekday mornings and Saturday 13:00 (7/8/9) and 14:30 (5/6). Kauwgomballenkwartier
+  runs many "KOTC x Jack's Hustle" sessions per level, also on weekends.
+- Other weekend formats worth mentioning when asked for "interesting things":
+  Super Sunday (mini-tournament per duo, poules + finals), Peakz Open and
+  one-off tournaments (per duo, often with a clinic), Jack's Hustle (individual).
+  Read `description` for the per-person or per-duo price.
 
 ## Reporting
 
