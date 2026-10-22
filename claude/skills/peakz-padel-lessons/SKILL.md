@@ -15,16 +15,30 @@ Foys API, which needs no login, so query it directly.
 python3 ~/.claude/skills/peakz-padel-lessons/scripts/peakz_lessons.py
 ```
 
-Defaults match the user's standing preferences: adults, weekdays (ma–vr),
-starting 17:00 or later, at **Vechtsebanen** and **Zeehaenkade** (Utrecht) and
-**Kauwgomballenkwartier** and **Zuidoost** (Amsterdam). The user plays weekly
+Defaults match the user's standing preferences: adults, weekday evenings
+(starting 17:00 or later) and weekends at any time, at **Vechtsebanen** and
+**Zeehaenkade** (Utrecht) and **Kauwgomballenkwartier** and **Zuidoost**
+(Amsterdam).
+
+**The user's main interest is clinics on overhead shots** (bandeja, vibora,
+smash, rulo, gancho, bajada). The script marks them (`overhead: true`, `^` in
+the table) and `--overhead` keeps only those. Always lead with them. They are
+rare in the evening: since January the four locations had 8 evening/weekend
+overhead clinics, all in Zuidoost (Bandeja 4/5/6, Vibora 2/3/4/5). Zeehaenkade
+runs a daytime series (Mon 10:00 Bandeja INT 5/6, Mon 12:00 Bajada INT 7/6,
+Tue 09:00 Smash ADV 5/4); mention it as the daytime option. A private lesson
+for the group of four, asking the trainer to focus on overheads, costs about
+the same per person as a clinic. The user plays weekly
 with a fixed group of four, so beginner-level offers ("Starterspakket", level
 9/10-only clinics) are probably too easy. Show them, but say so.
 
-It also lists **King of the Court** sessions at all four locations, a social format the user wants tracked too: weekends at any time,
-weekdays only from `--from` (17:00) on, matching when the user can play.
+It also lists **King of the Court** sessions at all four locations, a social
+format the user wants tracked too, with the same day and time rule.
 
-Flags: `--from 18:00`, `--to 22:00`, `--days ma,di,wo,do`,
+`--from`/`--to` bound the start time on weekdays only; weekend sessions count
+at any time. Pass `--days ma,di,wo,do,vr` to leave weekends out.
+
+Flags: `--from 18:00`, `--to 22:00`, `--days ma,di,wo,do`, `--overhead`,
 `--locations Zeehaenkade,Spoorzone`, `--kotc-locations …` (empty string skips
 King of the Court), `--kotc-days za,zo`, `--json`, `--list-locations`, `--new`.
 Location names are the short form (`Zuidoost`, not `Amsterdam - Zuidoost`).

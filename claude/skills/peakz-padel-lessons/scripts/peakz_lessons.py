@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """List adult Peakz Padel lessons, clinics and King of the Court sessions.
 
-Lessons and clinics are filtered by --locations/--days/--from/--to; King of the
-Court sessions by --kotc-locations/--kotc-days: weekends at any time, weekdays
-only from --from on.
+Lessons and clinics are filtered by --locations/--days, King of the Court
+sessions by --kotc-locations/--kotc-days. For all three, --from/--to bound the
+start time on weekdays only; weekend sessions count at any time. Clinics on
+overhead shots (bandeja, vibora, smash, ...) are marked, and --overhead keeps
+only those.
 
 Reads the public Foys API behind peakzpadel.nl (no login, no cookies).
 
@@ -13,6 +15,7 @@ Reads the public Foys API behind peakzpadel.nl (no login, no cookies).
   peakz_lessons.py --list-locations
   peakz_lessons.py --json
   peakz_lessons.py --kotc-days za,zo
+  peakz_lessons.py --overhead     # only clinics on overhead shots
   peakz_lessons.py --new          # only what appeared since the last --new run
 """
 import argparse
@@ -35,6 +38,15 @@ DEFAULT_KOTC_LOCATIONS = "Vechtsebanen,Zeehaenkade,Zuidoost,Kauwgomballenkwartie
 # Category 5 also holds ladies-only "Queen of the Court", and the mixed-couples
 # edition sits outside it, so match on the title instead.
 KOTC_TITLE = re.compile(r"king of the court|kotc", re.I)
+OVERHEAD_TITLE = re.compile(
+    r"bandeja|v[ií]bora|smash|rulo|gancho|bajada|overhead|remate|por ?(3|4|tres|cuatro)|\bx ?[34]\b", re.I)
+
+
+def in_window(day, hhmm, days, from_time, to_time):
+    """Weekdays need a start within --from/--to; weekends count at any time."""
+    if DAYS[day] not in days:
+        return False
+    return day >= 5 or from_time <= hhmm < to_time
 DAYS = ["ma", "di", "wo", "do", "vr", "za", "zo"]
 EN_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
@@ -78,11 +90,9 @@ def lessons(locs, days, from_time, to_time):
     for x in rows:
         if x["locationName"] not in locs:
             continue
-        if DAYS[EN_DAYS.index(x["dayOfWeek"])] not in days:
-            continue
         if x["categoryName"].startswith("Kids") or "jaar)" in x["name"].lower():
             continue
-        if not from_time <= x["startTime"][:5] < to_time:
+        if not in_window(EN_DAYS.index(x["dayOfWeek"]), x["startTime"][:5], days, from_time, to_time):
             continue
         out.append({
             "kind": "lesson",
@@ -102,7 +112,7 @@ def lessons(locs, days, from_time, to_time):
     return sorted(out, key=lambda r: (r["date"], r["start"]))
 
 
-def clinics(locs, days, from_time, to_time):
+def clinics(locs, days, from_time, to_time, overhead_only=False):
     today = datetime.now().strftime("%Y-%m-%dT00:00:00.000Z")
     rows = paged(
         f"{CALENDAR_API}/public-calendar?organisationId={ORG}&start={today}"
@@ -116,13 +126,15 @@ def clinics(locs, days, from_time, to_time):
         if not loc:
             continue
         start = datetime.fromisoformat(e["start"])
-        if DAYS[start.weekday()] not in days:
+        if not in_window(start.weekday(), start.strftime("%H:%M"), days, from_time, to_time):
             continue
-        if not from_time <= start.strftime("%H:%M") < to_time:
+        overhead = bool(OVERHEAD_TITLE.search(e["title"]))
+        if overhead_only and not overhead:
             continue
         cap = e.get("maxAmountOfAttendances") or 0
         out.append({
             "kind": "clinic",
+            "overhead": overhead,
             "date": start.strftime("%Y-%m-%d"),
             "day": DAYS[start.weekday()],
             "start": start.strftime("%H:%M"),
@@ -137,7 +149,7 @@ def clinics(locs, days, from_time, to_time):
     return sorted(out, key=lambda r: (r["date"], r["start"]))
 
 
-def kotc(locs, days, from_time):
+def kotc(locs, days, from_time, to_time):
     today = datetime.now().strftime("%Y-%m-%dT00:00:00.000Z")
     rows = paged(
         f"{CALENDAR_API}/public-calendar?organisationId={ORG}&start={today}"
@@ -150,9 +162,7 @@ def kotc(locs, days, from_time):
         if not loc or not KOTC_TITLE.search(e["title"]):
             continue
         start = datetime.fromisoformat(e["start"])
-        if DAYS[start.weekday()] not in days:
-            continue
-        if start.weekday() < 5 and start.strftime("%H:%M") < from_time:
+        if not in_window(start.weekday(), start.strftime("%H:%M"), days, from_time, to_time):
             continue
         cap = e.get("maxAmountOfAttendances") or 0
         # Hustle editions take individual sign-ups; the rest are booked per duo.
@@ -202,9 +212,10 @@ def only_new(results):
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--locations", default=DEFAULT_LOCATIONS, help=f"comma-separated (default: {DEFAULT_LOCATIONS})")
-    p.add_argument("--days", default="ma,di,wo,do,vr", help="comma-separated ma..zo (default: ma,di,wo,do,vr)")
-    p.add_argument("--from", dest="from_time", default="17:00", help="earliest start, HH:MM (default 17:00)")
-    p.add_argument("--to", dest="to_time", default="24:00", help="latest start, exclusive, HH:MM")
+    p.add_argument("--days", default=",".join(DAYS), help="comma-separated ma..zo (default: all)")
+    p.add_argument("--from", dest="from_time", default="17:00", help="earliest weekday start, HH:MM (default 17:00)")
+    p.add_argument("--to", dest="to_time", default="24:00", help="latest weekday start, exclusive, HH:MM")
+    p.add_argument("--overhead", action="store_true", help="only clinics on overhead shots (bandeja, vibora, smash, ...)")
     p.add_argument("--kotc-locations", default=DEFAULT_KOTC_LOCATIONS,
                    help=f"King of the Court locations (default: {DEFAULT_KOTC_LOCATIONS}); empty to skip")
     p.add_argument("--kotc-days", default=",".join(DAYS), help="King of the Court days (default: all)")
@@ -224,8 +235,8 @@ def main():
     kotc_locs, kotc_days = split(a.kotc_locations), {d.lower() for d in split(a.kotc_days)}
     results = {
         "lessons": lessons(locs, days, a.from_time, a.to_time),
-        "clinics": clinics(locs, days, a.from_time, a.to_time),
-        "kotc": kotc(kotc_locs, kotc_days, a.from_time) if kotc_locs else [],
+        "clinics": clinics(locs, days, a.from_time, a.to_time, a.overhead),
+        "kotc": kotc(kotc_locs, kotc_days, a.from_time, a.to_time) if kotc_locs else [],
     }
 
     if a.new:
@@ -242,16 +253,16 @@ def main():
         return
 
     status = lambda r: "FULL" if r["free"] <= 0 else f"{r['free']} free"
-    print(f"\nLESSONS  ({', '.join(sorted(locs))}; {','.join(d for d in DAYS if d in days)}; {a.from_time}-{a.to_time})\n")
+    print(f"\nLESSONS  ({', '.join(sorted(locs))}; {','.join(d for d in DAYS if d in days)}; weekdays {a.from_time}-{a.to_time}, weekends all day)\n")
     for r in results["lessons"]:
         print(f"{r['date']} {r['day']} {r['start']}-{r['end']}  {r['location']:<22} {r['title']:<28} "
               f"{r['lessons']}x  €{r['price']:.0f}  {r['trainer'] or '-'}  ({r['free']} free)\n    {r['url']}")
-    print("\nCLINICS\n")
+    print("\nCLINICS  (^ = overhead shot)\n")
     for r in results["clinics"]:
-        print(f"{r['date']} {r['day']} {r['start']}-{r['end']}  {r['location']:<22} {r['title']:<42} "
-              f"€{r['price']:.2f}  {status(r)}\n    {r['url']}")
+        print(f"{'^' if r['overhead'] else ' '} {r['date']} {r['day']} {r['start']}-{r['end']}  {r['location']:<22} "
+              f"{r['title']:<42} €{r['price']:.2f}  {status(r)}\n    {r['url']}")
     if kotc_locs:
-        print(f"\nKING OF THE COURT  ({', '.join(sorted(kotc_locs))}; {','.join(d for d in DAYS if d in kotc_days)}; weekdays from {a.from_time})\n")
+        print(f"\nKING OF THE COURT  ({', '.join(sorted(kotc_locs))}; {','.join(d for d in DAYS if d in kotc_days)}; weekdays {a.from_time}-{a.to_time}, weekends all day)\n")
         for r in results["kotc"]:
             print(f"{r['date']} {r['day']} {r['start']}-{r['end']}  {r['location']:<14} {r['title']:<48} "
                   f"€{r['price']:.0f}/{r['unit']}  {status(r)}\n    {r['url']}")
