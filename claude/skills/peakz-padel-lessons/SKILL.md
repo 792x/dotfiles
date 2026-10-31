@@ -1,6 +1,6 @@
 ---
 name: peakz-padel-lessons
-description: Find Peakz Padel lessons and clinics (lesson packages, private lessons, clinics) at chosen locations, days and times, through Peakz's public API instead of their clunky calendar site. Use when the user asks about padel lessons, padellessen, clinics, a privéles or trainers at Peakz Padel, or wants available lesson slots in Utrecht or Amsterdam.
+description: Find Peakz Padel lessons, clinics (especially overhead-shot clinics like bandeja, vibora, smash) and King of the Court sessions at chosen locations, days and times, through Peakz's public API instead of their clunky calendar site, and check daily for new ones. Use when the user asks about padel lessons, padellessen, clinics, a privéles, trainers, King of the Court or other Peakz Padel events, or wants available slots in Utrecht or Amsterdam.
 ---
 
 # Peakz Padel lessons
@@ -11,9 +11,15 @@ Foys API, which needs no login, so query it directly.
 
 ## Quick run
 
+The script is `scripts/peakz_lessons.py` in this skill's folder (Python 3
+standard library only, no installs). In Claude Code that is usually:
+
 ```bash
 python3 ~/.claude/skills/peakz-padel-lessons/scripts/peakz_lessons.py
 ```
+
+Elsewhere, run it from wherever this skill is installed. See "Where this runs"
+if the API is unreachable.
 
 Defaults match the user's standing preferences: adults, weekday evenings
 (starting 17:00 or later) and weekends at any time, at **Vechtsebanen** and
@@ -121,6 +127,36 @@ Organisation id: `df82f4dd-fd87-4af5-9c2f-656fe1a44357` (`$ORG` below).
   can open that lesson or clinic in one click:
   lesson `https://www.peakzpadel.nl/reserveren/lessons/packages/<id>`,
   clinic `https://www.peakzpadel.nl/reserveren/kalender-event?id=<id>`.
+
+## Where this runs
+
+- **Claude Code** (CLI or desktop Code tab): works as is. The script needs
+  outbound HTTPS to `api.foys.io`.
+- **claude.ai with code execution**: the sandbox may only reach an allowlist of
+  domains. If the script fails with a connection or proxy error, say so plainly.
+  Then use a browser tool if one is connected (open the API URLs below and read
+  the JSON), or ask the user to open the API URL in their own browser and paste
+  the JSON back, and filter it by the same rules as the script.
+- `--new` keeps its state in `~/.local/state/peakz-lessons/seen.json`, so it
+  only works where that file persists between runs (a real machine, not a
+  throwaway sandbox).
+
+## Setting up the daily check
+
+On a machine with Claude Code and scheduled tasks, create a daily task (the
+user chose 10:00) with this prompt, adjusted if their preferences change:
+
+> Check whether Peakz Padel has published new clinics, lessons or King of the
+> Court sessions that fit me, and tell me only about new ones. My main interest
+> is clinics on overhead shots. Load the `peakz-padel-lessons` skill and run its
+> script with `--new --json`. If all lists are empty, reply with one line in
+> Dutch and send no notification. Otherwise reply in Dutch with the new overhead
+> clinics first, then other clinics, lessons and King of the Court, each with
+> its booking link, and send one short push notification naming the most
+> interesting new item (an overhead clinic if there is one). If the script
+> fails, say so and notify. Do not book anything.
+
+Run it on one machine only, or every new item is reported twice.
 
 ## Open Matches are not public
 
